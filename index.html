@@ -28,6 +28,10 @@
 
         var apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
 
+        // Define an array of colors for different tracks
+        var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
+        var colorIndex = 0;
+
         fetch(apiUrl)
             .then(response => response.json())
             .then(data => {
@@ -41,8 +45,17 @@
                     if (file.path.endsWith(".gpx")) {
                         var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${file.path}`;
 
+                        // Assign color from the array, cycling through the list
+                        var trackColor = trackColors[colorIndex % trackColors.length];
+                        colorIndex++;
+
                         new L.GPX(gpxUrl, {
                             async: true,
+                            polyline_options: {
+                                color: trackColor,
+                                weight: 4,
+                                opacity: 0.8
+                            },
                             marker_options: {
                                 startIconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
                                 endIconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png',
