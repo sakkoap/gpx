@@ -49,23 +49,30 @@
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
-                        new L.GPX(gpxUrl, {
+                        var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
                             polyline_options: {
                                 color: trackColor,
                                 weight: 4,
                                 opacity: 0.8
                             },
-                            marker_options: {
-                                startIconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
-                                endIconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png',
-                                shadowUrl: 'https://leafletjs.com/examples/custom-icons/leaf-shadow.png'
+                            marker_options: { // Disable start and end markers
+                                startIcon: false,
+                                endIcon: false
                             }
                         }).on('loaded', function(e) {
                             bounds.push(e.target.getBounds());
                             var allBounds = bounds.reduce((acc, b) => acc.extend(b), L.latLngBounds(bounds[0]));
                             map.fitBounds(allBounds);
                         }).addTo(map);
+
+                        // Add popup when clicked
+                        gpxLayer.on('click', function() {
+                            L.popup()
+                                .setLatLng(gpxLayer.getBounds().getCenter()) // Popup at center of track
+                                .setContent(`<b>Track:</b> ${file.path}`)
+                                .openOn(map);
+                        });
                     }
                 });
             })
