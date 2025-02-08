@@ -9,7 +9,12 @@
     <script src="https://unpkg.com/togeojson"></script>
     <script src="https://unpkg.com/leaflet-gpx/gpx.js"></script>
     <style>
-        #map { height: 90vh; width: 100%; }
+        /* Fill the page with the map */
+        html, body, #map { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+        }
     </style>
 </head>
 <body>
@@ -52,7 +57,7 @@
                         var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
                             polyline_options: {
-                                color: trackColor,
+                                color: trackColor,  // Track color
                                 weight: 4,
                                 opacity: 0.8
                             },
