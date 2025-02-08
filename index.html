@@ -73,9 +73,32 @@
 
                         // Add popup when clicked
                         gpxLayer.on('click', function() {
+                            // Parse the GPX data to extract metadata
+                            var gpxData = gpxLayer.get_layers()[0]._layers[0]._latlngs;
+
+                            // Calculate distance (in meters)
+                            var distance = 0;
+                            for (var i = 0; i < gpxData.length - 1; i++) {
+                                distance += gpxData[i].distanceTo(gpxData[i + 1]);
+                            }
+
+                            // Calculate average speed (assuming time data is available in the GPX file)
+                            var totalTime = (gpxData[gpxData.length - 1].timestamp - gpxData[0].timestamp) / 1000; // in seconds
+                            var avgSpeed = totalTime > 0 ? distance / totalTime : 0; // meters per second
+
+                            // Format date and distance in a more readable way
+                            var date = new Date(gpxData[0].timestamp).toLocaleString();
+                            var formattedDistance = (distance / 1000).toFixed(2) + " km"; // Convert to km
+                            var formattedSpeed = (avgSpeed * 3.6).toFixed(2) + " km/h"; // Convert m/s to km/h
+
                             L.popup()
                                 .setLatLng(gpxLayer.getBounds().getCenter()) // Popup at center of track
-                                .setContent(`<b>Track:</b> ${file.path}`)
+                                .setContent(`
+                                    <b>Track:</b> ${file.path.replace(".gpx", "")}<br>
+                                    <b>Date:</b> ${date}<br>
+                                    <b>Distance:</b> ${formattedDistance}<br>
+                                    <b>Average Speed:</b> ${formattedSpeed}
+                                `)
                                 .openOn(map);
                         });
                     }
