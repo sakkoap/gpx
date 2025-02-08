@@ -70,8 +70,8 @@
                             map.fitBounds(allBounds);
                         }).addTo(map);
 
-                        // Add popup when clicked
-                        gpxLayer.on('click', function() {
+                        // Add popup when clicked on the track line
+                        gpxLayer.on('click', function(event) {
                             // Parse the GPX data to extract metadata
                             var gpxData = gpxLayer.get_layers()[0]._layers[0]._latlngs;
 
@@ -90,8 +90,9 @@
                             var formattedDistance = (distance / 1000).toFixed(2) + " km"; // Convert to km
                             var formattedSpeed = (avgSpeed * 3.6).toFixed(2) + " km/h"; // Convert m/s to km/h
 
+                            // Create and show the popup at the clicked location
                             L.popup()
-                                .setLatLng(gpxLayer.getBounds().getCenter()) // Popup at center of track
+                                .setLatLng(event.latlng) // Popup at clicked location
                                 .setContent(`
                                     <b>Track:</b> ${file.path.replace(".gpx", "")}<br>
                                     <b>Date:</b> ${date}<br>
@@ -106,4 +107,4 @@
             .catch(error => console.error("Error fetching GPX files:", error));
     </script>
 </body>
-</ht
+</html>
