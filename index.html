@@ -72,8 +72,7 @@
                                     const xmlDoc = parser.parseFromString(gpxText, "application/xml");
 
                                     let date = "Unknown";
-                                    let distance = 0;
-                                    let avgSpeed = 0;
+                                    let description = "No details available";
 
                                     // Extract <metadata><time>
                                     const metaTime = xmlDoc.querySelector("metadata > time");
@@ -90,11 +89,18 @@
                                     // Extract track name
                                     const trackName = file.path.replace(".gpx", "").split('/').pop();
 
+                                    // Extract <desc> content
+                                    const descNode = xmlDoc.querySelector("trk > desc");
+                                    if (descNode) {
+                                        description = descNode.textContent;
+                                    }
+
                                     L.popup()
                                         .setLatLng(event.latlng)
                                         .setContent(`
                                             <b>Track:</b> ${trackName}<br>
-                                            <b>Date:</b> ${date}<br>
+                                            <b>Date:</b> ${date}<br><br>
+                                            ${description}
                                         `)
                                         .openOn(map);
                                 })
