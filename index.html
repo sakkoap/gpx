@@ -81,19 +81,27 @@
                             let distance = 0;
                             let avgSpeed = 0;
 
+                            // Debug: Check GPX data structure
+                            console.log("GPX Data:", gpxData);
+
                             // Check if GPX data contains valid track data
                             if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
                                 const points = gpxData.trk[0].trkseg[0].trkpt;
-                                
+
+                                // Debug: Check points structure
+                                console.log("Track Points:", points);
+
                                 // Ensure there are points in the track
                                 if (points.length > 0) {
                                     // Extract date from the first point (if available)
                                     date = points[0].time ? new Date(points[0].time).toLocaleDateString() : "Unknown";
+                                    console.log("Track Date:", date);
 
                                     // Calculate total distance
                                     for (let i = 0; i < points.length - 1; i++) {
                                         distance += haversineDistance(points[i], points[i + 1]);
                                     }
+                                    console.log("Track Distance:", distance);
 
                                     // Calculate average speed if there is sufficient data
                                     const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
@@ -105,6 +113,7 @@
                                     } else {
                                         avgSpeed = 0;
                                     }
+                                    console.log("Average Speed:", avgSpeed);
                                 }
                             }
 
