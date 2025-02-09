@@ -16,18 +16,18 @@
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map').setView([55.6761, 12.5683], 12);
+        const map = L.map('map').setView([55.6761, 12.5683], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        var repoOwner = "sakkoap";
-        var repoName = "gpx";
-        var branch = "main";
-        var apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
+        const repoOwner = "sakkoap";
+        const repoName = "gpx";
+        const branch = "main";
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
 
-        var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
-        var colorIndex = 0;
+        const trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
+        let colorIndex = 0;
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -37,15 +37,14 @@
                     return;
                 }
 
-                var bounds = [];
+                const bounds = [];
                 data.tree.forEach(file => {
                     if (file.path.endsWith(".gpx")) {
-                        // Ensure the file path is encoded correctly
-                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
-                        var trackColor = trackColors[colorIndex % trackColors.length];
+                        const gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
+                        const trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
-                        var gpxLayer = new L.GPX(gpxUrl, {
+                        const gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
                             polyline_options: {
                                 color: trackColor,
@@ -53,19 +52,18 @@
                                 opacity: 0.8
                             },
                             marker_options: {
-                                startIcon: false,
-                                endIcon: false,
-                                waypointIcon: false
+                                startIcon: null,
+                                endIcon: null,
+                                waypointIcon: null
                             }
                         }).on('loaded', function(e) {
                             bounds.push(e.target.getBounds());
-                            if (bounds.length > 0) {
-                                var allBounds = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
+                            if (bounds.length === data.tree.filter(f => f.path.endsWith(".gpx")).length) {
+                                const allBounds = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
                                 map.fitBounds(allBounds);
                             }
                         }).addTo(map);
 
-                        // Add event listener for clicks on the track
                         gpxLayer.on('click', function(event) {
                             const gpxData = gpxLayer._gpx;
 
@@ -74,39 +72,18 @@
                                 return;
                             }
 
-                            // Get filename without directory and ".gpx"
-                            const trackName = file.path.replace(".gpx", "").split('/').pop(); 
+                            const trackName = file.path.replace(".gpx", "").split('/').pop();
                             let date = "Unknown";
-                            let distance = 0;
-                            let avgSpeed = 0;
 
-                            if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
-                                const points = gpxData.trk[0].trkseg[0].trkpt;
-                                if (points.length > 0) {
-                                    date = points[0].time ? new Date(points[0].time).toLocaleString() : "Unknown";
-
-                                    for (let i = 0; i < points.length - 1; i++) {
-                                        const p1 = points[i];
-                                        const p2 = points[i + 1];
-                                        distance += p1.distanceTo(p2);
-                                    }
-
-                                    const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
-                                    const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime() : null;
-                                    if (startTime && endTime) {
-                                        const totalTime = (endTime - startTime) / 1000;
-                                        avgSpeed = totalTime > 0 ? (distance / totalTime) * 3.6 : 0;
-                                    }
-                                }
+                            if (gpxData.metadata && gpxData.metadata.time) {
+                                date = new Date(gpxData.metadata.time).toLocaleString();
                             }
 
                             L.popup()
                                 .setLatLng(event.latlng)
                                 .setContent(`
                                     <b>Track:</b> ${trackName}<br>
-                                    <b>Date:</b> ${date}<br>
-                                    <b>Distance:</b> ${(distance / 1000).toFixed(2)} km<br>
-                                    <b>Average Speed:</b> ${avgSpeed.toFixed(2)} km/h
+                                    <b>Date:</b> ${date}
                                 `)
                                 .openOn(map);
                         });
