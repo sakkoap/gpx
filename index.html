@@ -65,54 +65,40 @@
                         }).addTo(map);
 
                         gpxLayer.on('click', function(event) {
-                            const gpxData = gpxLayer._gpx;
+                            fetch(gpxUrl)
+                                .then(response => response.text())
+                                .then(gpxText => {
+                                    const parser = new DOMParser();
+                                    const xmlDoc = parser.parseFromString(gpxText, "application/xml");
 
-                            if (!gpxData) {
-                                console.error("GPX data not available for this track.");
-                                return;
-                            }
+                                    let date = "Unknown";
+                                    let distance = 0;
+                                    let avgSpeed = 0;
 
-                            const trackName = file.path.replace(".gpx", "").split('/').pop(); 
-                            let date = "Unknown";
-                            let distance = 0;
-                            let avgSpeed = 0;
-
-                            // First, check <metadata><time>
-                            if (gpxData.metadata && gpxData.metadata.time) {
-                                date = new Date(gpxData.metadata.time).toLocaleString();
-                            } 
-                            // Fallback to first track point if metadata time is missing
-                            else if (gpxData.trk && gpxData.trk[0]?.trkseg?.[0]?.trkpt?.[0]?.time) {
-                                date = new Date(gpxData.trk[0].trkseg[0].trkpt[0].time).toLocaleString();
-                            }
-
-                            if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
-                                const points = gpxData.trk[0].trkseg[0].trkpt;
-                                if (points.length > 0) {
-                                    for (let i = 0; i < points.length - 1; i++) {
-                                        const p1 = points[i];
-                                        const p2 = points[i + 1];
-                                        distance += p1.distanceTo(p2);
+                                    // Extract <metadata><time>
+                                    const metaTime = xmlDoc.querySelector("metadata > time");
+                                    if (metaTime) {
+                                        date = new Date(metaTime.textContent).toLocaleString();
+                                    } else {
+                                        // Fallback to first <trkpt><time>
+                                        const firstTrackPointTime = xmlDoc.querySelector("trkpt > time");
+                                        if (firstTrackPointTime) {
+                                            date = new Date(firstTrackPointTime.textContent).toLocaleString();
+                                        }
                                     }
 
-                                    const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
-                                    const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime() : null;
-                                    if (startTime && endTime) {
-                                        const totalTime = (endTime - startTime) / 1000;
-                                        avgSpeed = totalTime > 0 ? (distance / totalTime) * 3.6 : 0;
-                                    }
-                                }
-                            }
+                                    // Extract track name
+                                    const trackName = file.path.replace(".gpx", "").split('/').pop();
 
-                            L.popup()
-                                .setLatLng(event.latlng)
-                                .setContent(`
-                                    <b>Track:</b> ${trackName}<br>
-                                    <b>Date:</b> ${date}<br>
-                                    <b>Distance:</b> ${(distance / 1000).toFixed(2)} km<br>
-                                    <b>Average Speed:</b> ${avgSpeed.toFixed(2)} km/h
-                                `)
-                                .openOn(map);
+                                    L.popup()
+                                        .setLatLng(event.latlng)
+                                        .setContent(`
+                                            <b>Track:</b> ${trackName}<br>
+                                            <b>Date:</b> ${date}<br>
+                                        `)
+                                        .openOn(map);
+                                })
+                                .catch(error => console.error("Error parsing GPX file:", error));
                         });
                     }
                 });
