@@ -43,7 +43,7 @@
                 var bounds = [];
                 data.tree.forEach(file => {
                     if (file.path.endsWith(".gpx")) {
-                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${file.path}`;
+                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
