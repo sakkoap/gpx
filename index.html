@@ -8,8 +8,7 @@
     <script src="https://unpkg.com/leaflet-gpx/gpx.js"></script>
     <style>
         html, body, #map { height: 100%; margin: 0; padding: 0; }
-
-        /* Hide markers and marker shadows */
+        /* Remove the pins and shadows */
         .leaflet-marker-icon, .leaflet-marker-shadow {
             display: none !important;
         }
@@ -43,7 +42,7 @@
                 var bounds = [];
                 data.tree.forEach(file => {
                     if (file.path.endsWith(".gpx")) {
-                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
+                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${file.path}`;
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
@@ -76,59 +75,49 @@
                                 return;
                             }
 
-                            const trackName = file.path.split('/').pop().replace(".gpx", "");
+                            const trackName = file.path.replace(".gpx", "").replace(/\//g, ' ').trim(); // Remove the directory and replace slashes with spaces
                             let date = "Unknown";
                             let distance = 0;
                             let avgSpeed = 0;
 
                             if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
                                 const points = gpxData.trk[0].trkseg[0].trkpt;
+                                console.log("GPX Points:", points);  // Log the points to see what data we have
 
-                                // Ensure there are points in the track
                                 if (points.length > 0) {
-                                    // Extract date from the first point (if available)
-                                    date = points[0].time ? new Date(points[0].time).toLocaleDateString() : "Unknown";
-
-                                    // Calculate total distance
+                                    // Get the date from the first point (if available)
+                                    date = points[0].time ? new Date(points[0].time).toLocaleString() : "Unknown";
+                                    
+                                    // Loop through the points to calculate distance and speed
                                     for (let i = 0; i < points.length - 1; i++) {
-                                        distance += haversineDistance(points[i], points[i + 1]);
+                                        const p1 = points[i];
+                                        const p2 = points[i + 1];
+                                        if (p1.lat && p1.lon && p2.lat && p2.lon) {
+                                            // Use the lat/lon to calculate distance
+                                            const point1 = L.latLng(p1.lat, p1.lon);
+                                            const point2 = L.latLng(p2.lat, p2.lon);
+                                            distance += point1.distanceTo(point2);
+                                        }
                                     }
 
-                                    // Calculate average speed if there is sufficient data
                                     const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
                                     const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime() : null;
 
-                                    if (startTime && endTime && startTime !== endTime) {
-                                        const totalTimeHours = (endTime - startTime) / (1000 * 60 * 60); // Convert ms to hours
-                                        avgSpeed = distance / totalTimeHours; // km/h
-                                    } else {
-                                        avgSpeed = 0;
+                                    if (startTime && endTime) {
+                                        const totalTime = (endTime - startTime) / 1000;  // Time in seconds
+                                        avgSpeed = totalTime > 0 ? (distance / totalTime) * 3.6 : 0;  // Speed in km/h
                                     }
                                 }
                             }
 
-                            // Function to calculate Haversine distance (in km)
-                            function haversineDistance(p1, p2) {
-                                const toRad = (angle) => angle * (Math.PI / 180);
-                                const R = 6371; // Radius of Earth in km
-                                const lat1 = toRad(p1.lat);
-                                const lon1 = toRad(p1.lon);
-                                const lat2 = toRad(p2.lat);
-                                const lon2 = toRad(p2.lon);
-                                
-                                const dLat = lat2 - lat1;
-                                const dLon = lon2 - lon1;
-                                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-                                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                            }
+                            console.log("Track Information: ", { trackName, date, distance, avgSpeed });  // Log the track info
 
-                            // Show popup with fixed values
                             L.popup()
                                 .setLatLng(event.latlng)
                                 .setContent(`
                                     <b>Track:</b> ${trackName}<br>
                                     <b>Date:</b> ${date}<br>
-                                    <b>Distance:</b> ${(distance).toFixed(2)} km<br>
+                                    <b>Distance:</b> ${(distance / 1000).toFixed(2)} km<br>
                                     <b>Average Speed:</b> ${avgSpeed.toFixed(2)} km/h
                                 `)
                                 .openOn(map);
