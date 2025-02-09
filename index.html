@@ -49,8 +49,10 @@
                                 weight: 4,
                                 opacity: 0.8
                             },
-                            onEachPoint: function(point, layer) {
-                                layer.setIcon(L.divIcon({ html: '' })); // Remove markers
+                            marker_options: {
+                                startIcon: false,
+                                endIcon: false,
+                                waypointIcon: false
                             }
                         }).on('loaded', function(e) {
                             bounds.push(e.target.getBounds());
@@ -60,6 +62,7 @@
                             }
                         }).addTo(map);
 
+                        // Add event listener for clicks on the track
                         gpxLayer.on('click', function(event) {
                             const gpxData = gpxLayer._gpx;
 
@@ -73,7 +76,6 @@
                             let distance = 0;
                             let avgSpeed = 0;
 
-
                             if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
                                 const points = gpxData.trk[0].trkseg[0].trkpt;
                                 if (points.length > 0) {
@@ -86,10 +88,10 @@
                                     }
 
                                     const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
-                                    const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime(): null;
+                                    const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime() : null;
                                     if (startTime && endTime) {
                                         const totalTime = (endTime - startTime) / 1000;
-                                        avgSpeed = totalTime > 0 ? distance / totalTime * 3.6: 0;
+                                        avgSpeed = totalTime > 0 ? (distance / totalTime) * 3.6 : 0;
                                     }
                                 }
                             }
