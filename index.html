@@ -8,7 +8,6 @@
     <script src="https://unpkg.com/leaflet-gpx/gpx.js"></script>
     <style>
         html, body, #map { height: 100%; margin: 0; padding: 0; }
-        /* Remove the pins and shadows */
         .leaflet-marker-icon, .leaflet-marker-shadow {
             display: none !important;
         }
@@ -25,7 +24,6 @@
         var repoOwner = "sakkoap";
         var repoName = "gpx";
         var branch = "main";
-
         var apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
 
         var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
@@ -42,7 +40,8 @@
                 var bounds = [];
                 data.tree.forEach(file => {
                     if (file.path.endsWith(".gpx")) {
-                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${file.path}`;
+                        // Ensure the file path is encoded correctly
+                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
@@ -75,45 +74,31 @@
                                 return;
                             }
 
-                            // Log the structure of the GPX data for debugging
-                            console.log("GPX Data Structure:", gpxData);
-
-                            const trackName = file.path.replace(".gpx", "").replace(/\//g, ' ').trim(); // Clean up track name
+                            // Get filename without directory and ".gpx"
+                            const trackName = file.path.replace(".gpx", "").split('/').pop(); 
                             let date = "Unknown";
                             let distance = 0;
                             let avgSpeed = 0;
 
                             if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
                                 const points = gpxData.trk[0].trkseg[0].trkpt;
-                                console.log("GPX Points:", points);  // Log the points to see the data
-
                                 if (points.length > 0) {
-                                    // Get the date from the first point (if available)
                                     date = points[0].time ? new Date(points[0].time).toLocaleString() : "Unknown";
-                                    
-                                    // Loop through the points to calculate distance and speed
+
                                     for (let i = 0; i < points.length - 1; i++) {
                                         const p1 = points[i];
                                         const p2 = points[i + 1];
-                                        if (p1.lat && p1.lon && p2.lat && p2.lon) {
-                                            // Use the lat/lon to calculate distance
-                                            const point1 = L.latLng(p1.lat, p1.lon);
-                                            const point2 = L.latLng(p2.lat, p2.lon);
-                                            distance += point1.distanceTo(point2);
-                                        }
+                                        distance += p1.distanceTo(p2);
                                     }
 
                                     const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
                                     const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime() : null;
-
                                     if (startTime && endTime) {
-                                        const totalTime = (endTime - startTime) / 1000;  // Time in seconds
-                                        avgSpeed = totalTime > 0 ? (distance / totalTime) * 3.6 : 0;  // Speed in km/h
+                                        const totalTime = (endTime - startTime) / 1000;
+                                        avgSpeed = totalTime > 0 ? (distance / totalTime) * 3.6 : 0;
                                     }
                                 }
                             }
-
-                            console.log("Track Information: ", { trackName, date, distance, avgSpeed });  // Log the track info
 
                             L.popup()
                                 .setLatLng(event.latlng)
