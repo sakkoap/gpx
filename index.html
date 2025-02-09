@@ -75,14 +75,17 @@
                                 return;
                             }
 
-                            const trackName = file.path.replace(".gpx", "").replace(/\//g, ' ').trim(); // Remove the directory and replace slashes with spaces
+                            // Log the structure of the GPX data for debugging
+                            console.log("GPX Data Structure:", gpxData);
+
+                            const trackName = file.path.replace(".gpx", "").replace(/\//g, ' ').trim(); // Clean up track name
                             let date = "Unknown";
                             let distance = 0;
                             let avgSpeed = 0;
 
                             if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
                                 const points = gpxData.trk[0].trkseg[0].trkpt;
-                                console.log("GPX Points:", points);  // Log the points to see what data we have
+                                console.log("GPX Points:", points);  // Log the points to see the data
 
                                 if (points.length > 0) {
                                     // Get the date from the first point (if available)
