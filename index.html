@@ -81,10 +81,13 @@
                             let distance = 0;
                             let avgSpeed = 0;
 
+                            // Check if GPX data contains valid track data
                             if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
                                 const points = gpxData.trk[0].trkseg[0].trkpt;
+                                
+                                // Ensure there are points in the track
                                 if (points.length > 0) {
-                                    // Extract the date from the first point
+                                    // Extract date from the first point (if available)
                                     date = points[0].time ? new Date(points[0].time).toLocaleDateString() : "Unknown";
 
                                     // Calculate total distance
@@ -92,13 +95,15 @@
                                         distance += haversineDistance(points[i], points[i + 1]);
                                     }
 
-                                    // Calculate average speed
+                                    // Calculate average speed if there is sufficient data
                                     const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
                                     const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime() : null;
                                     
                                     if (startTime && endTime && startTime !== endTime) {
                                         const totalTimeHours = (endTime - startTime) / (1000 * 60 * 60); // Convert ms to hours
                                         avgSpeed = distance / totalTimeHours; // km/h
+                                    } else {
+                                        avgSpeed = 0;
                                     }
                                 }
                             }
