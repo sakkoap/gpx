@@ -10,16 +10,16 @@
     <script src="https://unpkg.com/leaflet-gpx/gpx.js"></script>
     <style>
         /* Make map fill entire screen */
-        html, body, #map { 
-            height: 100%; 
-            margin: 0; 
-            padding: 0; 
+        html, body, #map {
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    
+
     <script>
         var map = L.map('map').setView([55.6761, 12.5683], 12); // Centered on Copenhagen
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -32,7 +32,6 @@
 
         var apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
 
-        // Define an array of colors for different tracks
         var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
         var colorIndex = 0;
 
@@ -49,55 +48,76 @@
                     if (file.path.endsWith(".gpx")) {
                         var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${file.path}`;
 
-                        // Assign color from the array, cycling through the list
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
                         var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
                             polyline_options: {
-                                color: trackColor,  // Track color
+                                color: trackColor,
                                 weight: 4,
                                 opacity: 0.8
                             },
-                            marker_options: { 
-                                startIconUrl: '',  // Disable start marker
-                                endIconUrl: ''     // Disable end marker
-                            }
+                           // Remove markers by setting marker_options to null
+                            marker_options: null 
                         }).on('loaded', function(e) {
                             bounds.push(e.target.getBounds());
-                            var allBounds = bounds.reduce((acc, b) => acc.extend(b), L.latLngBounds(bounds[0]));
-                            map.fitBounds(allBounds);
+                            if (bounds.length > 0) { // Check if bounds array is not empty
+                                var allBounds = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
+                                map.fitBounds(allBounds);
+                            }
                         }).addTo(map);
 
-                        // Add popup when clicked on the track line
-                        gpxLayer.on('click', function(event) {
-                            // Parse the GPX data to extract metadata
-                            var gpxData = gpxLayer.get_layers()[0]._layers[0]._latlngs;
 
-                            // Calculate distance (in meters)
-                            var distance = 0;
-                            for (var i = 0; i < gpxData.length - 1; i++) {
-                                distance += gpxData[i].distanceTo(gpxData[i + 1]);
+                        gpxLayer.on('click', function(event) {
+                            // Access the raw GPX data from the layer
+                            const gpxData = gpxLayer._gpx;
+
+                            if (!gpxData) {
+                                console.error("GPX data not available for this track.");
+                                return;
                             }
 
-                            // Calculate average speed (assuming time data is available in the GPX file)
-                            var totalTime = (gpxData[gpxData.length - 1].timestamp - gpxData[0].timestamp) / 1000; // in seconds
-                            var avgSpeed = totalTime > 0 ? distance / totalTime : 0; // meters per second
+                            // Extract track name/metadata (handle potential missing metadata)
+                            const trackName = file.path.replace(".gpx", "");
+                            let date = "Unknown";
+                            let distance = 0;
+                            let avgSpeed = 0;
 
-                            // Format date and distance in a more readable way
-                            var date = new Date(gpxData[0].timestamp).toLocaleString();
-                            var formattedDistance = (distance / 1000).toFixed(2) + " km"; // Convert to km
-                            var formattedSpeed = (avgSpeed * 3.6).toFixed(2) + " km/h"; // Convert m/s to km/h
+                            if (gpxData.trk && gpxData.trk[0] && gpxData.trk[0].trkseg && gpxData.trk[0].trkseg[0].trkpt) {
+                                const points = gpxData.trk[0].trkseg[0].trkpt;
 
-                            // Create and show the popup at the clicked location
+                                if (points.length > 0) {
+                                    date = points[0].time ? new Date(points[0].time).toLocaleString() : "Unknown";
+
+                                    // Calculate distance and speed (using haversine formula for accuracy)
+                                    for (let i = 0; i < points.length - 1; i++) {
+                                        const p1 = points[i];
+                                        const p2 = points[i + 1];
+                                        distance += p1.distanceTo(p2); // Use Leaflet's distanceTo which uses Haversine
+                                    }
+
+                                    // Approximate total time (improve if your GPX has time data on each point)
+                                    const startTime = points[0].time ? new Date(points[0].time).getTime() : null;
+                                    const endTime = points[points.length - 1].time ? new Date(points[points.length - 1].time).getTime(): null;
+
+                                    if (startTime && endTime) {
+                                        const totalTime = (endTime - startTime) / 1000; // in seconds
+                                        avgSpeed = totalTime > 0 ? distance / totalTime * 3.6: 0; // km/h
+                                    }
+
+                                }
+                            }
+
+
+
                             L.popup()
-                                .setLatLng(event.latlng) // Popup at clicked location
+                                .setLatLng(event.latlng)
                                 .setContent(`
-                                    <b>Track:</b> ${file.path.replace(".gpx", "")}<br>
+                                    <b>Track:</b> ${trackName}<br>
                                     <b>Date:</b> ${date}<br>
-                                    <b>Distance:</b> ${formattedDistance}<br>
-                                    <b>Average Speed:</b> ${formattedSpeed}
+                                    <b>Distance:</b> ${(distance / 1000).toFixed(2)} km<br>
+                                    <b>Average Speed:</b> ${avgSpeed.toFixed(2)} km/h
                                 `)
                                 .openOn(map);
                         });
