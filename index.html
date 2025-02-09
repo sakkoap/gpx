@@ -49,11 +49,11 @@
                                 weight: 4,
                                 opacity: 0.8
                             },
-                            marker_options: {
-                                startIcon: false,
-                                endIcon: false,
-                                waypointIcon: false
-                            }
+marker_options: {
+    startIcon: false,
+    endIcon: false,
+    wptIcon: false
+}
                         }).on('loaded', function(e) {
                             bounds.push(e.target.getBounds());
                             if (bounds.length > 0) {
