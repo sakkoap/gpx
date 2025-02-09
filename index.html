@@ -74,7 +74,7 @@ marker_options: {
                                 return;
                             }
 
-                            const trackName = file.path.replace(".gpx", "");
+                            const trackName = file.path.split('/').pop().replace(".gpx", "");
                             let date = "Unknown";
                             let distance = 0;
                             let avgSpeed = 0;
