@@ -8,15 +8,19 @@
     <script src="https://unpkg.com/leaflet-gpx/gpx.js"></script>
     <style>
         html, body, #map { height: 100%; margin: 0; padding: 0; }
-        .leaflet-marker-icon, .leaflet-marker-shadow {
-            display: none !important;
+        .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
+
+        /* Improve popup readability on mobile */
+        @media (max-width: 768px) {
+            .leaflet-popup-content { font-size: 16px; }
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map').setView([59.0, 11.3], 8);
+        var map = L.map('map', { tap: false }).setView([59.0, 11.3], 8);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -29,6 +33,9 @@
         var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
         var colorIndex = 0;
         var bounds = [];
+
+        var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+        var eventType = isMobile ? 'mouseover' : 'click';
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -44,11 +51,13 @@
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
+                        var lineWeight = isMobile ? 6 : 4; // Thicker lines on mobile
+
                         var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
                             polyline_options: {
                                 color: trackColor,
-                                weight: 4,
+                                weight: lineWeight,
                                 opacity: 0.8
                             },
                             marker_options: {
@@ -64,7 +73,7 @@
                             }
                         }).addTo(map);
 
-                        gpxLayer.on('click', function(event) {
+                        gpxLayer.on(eventType, function(event) {
                             fetch(gpxUrl)
                                 .then(response => response.text())
                                 .then(gpxText => {
@@ -74,25 +83,20 @@
                                     let date = "Unknown";
                                     let description = "No details available";
 
-                                    // Extract <metadata><time>
                                     const metaTime = xmlDoc.querySelector("metadata > time");
                                     if (metaTime) {
                                         date = new Date(metaTime.textContent).toLocaleString();
                                     } else {
-                                        // Fallback to first <trkpt><time>
                                         const firstTrackPointTime = xmlDoc.querySelector("trkpt > time");
                                         if (firstTrackPointTime) {
                                             date = new Date(firstTrackPointTime.textContent).toLocaleString();
                                         }
                                     }
 
-                                    // Extract track name
                                     const trackName = file.path.replace(".gpx", "").split('/').pop();
-
-                                    // Extract <desc> content and remove <hr> tags
                                     const descNode = xmlDoc.querySelector("trk > desc");
                                     if (descNode) {
-                                        description = descNode.textContent.replace(/<hr.*?>/g, ""); // Remove <hr> tags
+                                        description = descNode.textContent.replace(/<hr.*?>/g, "");
                                     }
 
                                     L.popup()
