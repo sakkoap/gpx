@@ -10,21 +10,22 @@
         html, body, #map { height: 100%; margin: 0; padding: 0; }
         .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
 
-        /* Increase popup text size and make it very readable on mobile */
+        /* Increase popup text size and make it even bigger on mobile */
         @media (max-width: 768px) {
             .leaflet-popup-content { 
-                font-size: 20px; /* Larger font size */
-                padding: 15px;
-                max-width: 300px;  /* Increased width */
+                font-size: 24px; /* Larger font size */
+                padding: 20px;
+                max-width: 350px;  /* Increased width */
+                max-height: 70%;  /* Allow larger height for mobile */
+                overflow: auto;   /* Enable scrolling if the content exceeds max height */
             }
             .leaflet-popup-tip { display: none; } /* Hide popup tip */
         }
 
-        /* Make map more responsive and improve tap area */
+        /* Make map more responsive and improve touch area */
         .leaflet-container {
             touch-action: manipulation; /* Smooth touch interactions */
         }
-
     </style>
 </head>
 <body>
