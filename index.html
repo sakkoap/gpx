@@ -10,20 +10,21 @@
         html, body, #map { height: 100%; margin: 0; padding: 0; }
         .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
 
-        /* Increase popup text size and make it touch-friendly on mobile */
+        /* Increase popup text size and make it very readable on mobile */
         @media (max-width: 768px) {
             .leaflet-popup-content { 
-                font-size: 18px; 
-                padding: 10px;
-                max-width: 250px;  /* Restrict width for easier reading on small screens */
+                font-size: 20px; /* Larger font size */
+                padding: 15px;
+                max-width: 300px;  /* Increased width */
             }
             .leaflet-popup-tip { display: none; } /* Hide popup tip */
         }
 
-        /* Touch area improvement for better accessibility on mobile */
+        /* Make map more responsive and improve tap area */
         .leaflet-container {
-            touch-action: manipulation; /* Make it more responsive to touch interactions */
+            touch-action: manipulation; /* Smooth touch interactions */
         }
+
     </style>
 </head>
 <body>
@@ -45,7 +46,7 @@
         var bounds = [];
 
         var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var eventType = isMobile ? 'tap' : 'click'; // Use tap for mobile and click for desktop
+        var eventType = isMobile ? 'click' : 'click'; // Use click for mobile and desktop
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -61,7 +62,7 @@
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
-                        var lineWeight = isMobile ? 6 : 4; // Thicker lines on mobile
+                        var lineWeight = isMobile ? 8 : 4; // Thicker lines for easier tapping on mobile
 
                         var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
@@ -83,6 +84,7 @@
                             }
                         }).addTo(map);
 
+                        // Handle both desktop and mobile with click
                         gpxLayer.on(eventType, function(event) {
                             fetch(gpxUrl)
                                 .then(response => response.text())
