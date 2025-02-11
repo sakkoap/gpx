@@ -10,16 +10,26 @@
         html, body, #map { height: 100%; margin: 0; padding: 0; }
         .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
 
-        /* Improve popup readability on mobile */
+        /* Increase popup text size and make it touch-friendly on mobile */
         @media (max-width: 768px) {
-            .leaflet-popup-content { font-size: 16px; }
+            .leaflet-popup-content { 
+                font-size: 18px; 
+                padding: 10px;
+                max-width: 250px;  /* Restrict width for easier reading on small screens */
+            }
+            .leaflet-popup-tip { display: none; } /* Hide popup tip */
+        }
+
+        /* Touch area improvement for better accessibility on mobile */
+        .leaflet-container {
+            touch-action: manipulation; /* Make it more responsive to touch interactions */
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map', { tap: false }).setView([59.0, 11.3], 8);
+        var map = L.map('map', { tap: true }).setView([59.0, 11.3], 8);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
@@ -35,7 +45,7 @@
         var bounds = [];
 
         var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var eventType = isMobile ? 'mouseover' : 'click';
+        var eventType = isMobile ? 'tap' : 'click'; // Use tap for mobile and click for desktop
 
         fetch(apiUrl)
             .then(response => response.json())
