@@ -10,21 +10,36 @@
         html, body, #map { height: 100%; margin: 0; padding: 0; }
         .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
 
-        /* Increase popup text size and make it even bigger on mobile */
-        @media (max-width: 768px) {
-            .leaflet-popup-content { 
-                font-size: 24px; /* Larger font size */
-                padding: 20px;
-                max-width: 350px;  /* Increased width */
-                max-height: 70%;  /* Allow larger height for mobile */
-                overflow: auto;   /* Enable scrolling if the content exceeds max height */
-            }
-            .leaflet-popup-tip { display: none; } /* Hide popup tip */
+        /* Default popup styling */
+        .leaflet-popup-content { 
+            font-size: 18px;
+            padding: 15px;
+            max-width: 300px;
         }
 
-        /* Make map more responsive and improve touch area */
-        .leaflet-container {
-            touch-action: manipulation; /* Smooth touch interactions */
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .leaflet-popup-content { 
+                font-size: 28px; /* Bigger text */
+                padding: 24px;
+                max-width: 400px; /* Larger popup */
+                max-height: 75%;
+                overflow: auto;
+            }
+            .leaflet-popup-tip { display: none; } /* Hide popup arrow */
+
+            /* Enlarge close button for better tapping */
+            .leaflet-popup-close-button {
+                font-size: 32px;
+                width: 40px;
+                height: 40px;
+                line-height: 40px;
+            }
+
+            /* Improve map text readability */
+            .leaflet-container {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
@@ -47,7 +62,7 @@
         var bounds = [];
 
         var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var eventType = isMobile ? 'click' : 'click'; // Use click for mobile and desktop
+        var eventType = 'click'; // Click works for both desktop & mobile
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -63,7 +78,7 @@
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
-                        var lineWeight = isMobile ? 8 : 4; // Thicker lines for easier tapping on mobile
+                        var lineWeight = isMobile ? 8 : 4; // Thicker lines for mobile
 
                         var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
@@ -85,7 +100,7 @@
                             }
                         }).addTo(map);
 
-                        // Handle both desktop and mobile with click
+                        // Show popup with track details
                         gpxLayer.on(eventType, function(event) {
                             fetch(gpxUrl)
                                 .then(response => response.text())
