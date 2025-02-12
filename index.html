@@ -1,146 +1,36 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>GPX Tracks Viewer</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/togeojson"></script>
-    <script src="https://unpkg.com/leaflet-gpx/gpx.js"></script>
-    <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; }
-        .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
+<style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
 
-        /* Default popup styling */
+    /* Default popup styling (Desktop) */
+    .leaflet-popup-content { 
+        font-size: 12px; /* Smaller text */
+        padding: 8px;
+        max-width: 200px; /* Narrower popup */
+    }
+
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
         .leaflet-popup-content { 
-            font-size: 14px; /* Smaller text for desktop */
-            padding: 10px;
-            max-width: 250px;
+            font-size: 36px; /* Bigger text */
+            padding: 30px;
+            max-width: 500px; /* Larger popup */
+            max-height: 80%;
+            overflow: auto;
+        }
+        .leaflet-popup-tip { display: none; } /* Hide popup arrow */
+
+        /* Enlarge close button for better tapping */
+        .leaflet-popup-close-button {
+            font-size: 36px;
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
         }
 
-        /* Mobile-specific styles */
-        @media (max-width: 768px) {
-            .leaflet-popup-content { 
-                font-size: 32px; /* Bigger text for mobile */
-                padding: 24px;
-                max-width: 450px; /* Larger popup */
-                max-height: 75%;
-                overflow: auto;
-            }
-            .leaflet-popup-tip { display: none; } /* Hide popup arrow */
-
-            /* Enlarge close button for better tapping */
-            .leaflet-popup-close-button {
-                font-size: 32px;
-                width: 40px;
-                height: 40px;
-                line-height: 40px;
-            }
-
-            /* Improve map text readability */
-            .leaflet-container {
-                font-size: 18px;
-            }
+        /* Improve map text readability */
+        .leaflet-container {
+            font-size: 20px;
         }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <script>
-        var map = L.map('map', { tap: true }).setView([59.0, 11.3], 8);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        var repoOwner = "sakkoap";
-        var repoName = "gpx";
-        var branch = "main";
-        var apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
-
-        var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
-        var colorIndex = 0;
-        var bounds = [];
-
-        var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var lineWeight = isMobile ? 10 : 4; // Even thicker lines for easier mobile clicks
-
-        fetch(apiUrl)
-            .then(response => response.json())
-            .then(data => {
-                if (!data.tree) {
-                    console.error("Invalid response from GitHub API:", data);
-                    return;
-                }
-
-                data.tree.forEach(file => {
-                    if (file.path.endsWith(".gpx")) {
-                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
-                        var trackColor = trackColors[colorIndex % trackColors.length];
-                        colorIndex++;
-
-                        var gpxLayer = new L.GPX(gpxUrl, {
-                            async: true,
-                            polyline_options: {
-                                color: trackColor,
-                                weight: lineWeight,
-                                opacity: 0.8,
-                                pointerEvents: 'stroke' // Makes it easier to tap on mobile
-                            },
-                            marker_options: {
-                                startIcon: false,
-                                endIcon: false,
-                                waypointIcon: false
-                            }
-                        }).on('loaded', function(e) {
-                            bounds.push(e.target.getBounds());
-                            if (bounds.length > 0) {
-                                var allBounds = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
-                                map.fitBounds(allBounds);
-                            }
-                        }).addTo(map);
-
-                        // Show popup with track details
-                        gpxLayer.on('click', function(event) {
-                            fetch(gpxUrl)
-                                .then(response => response.text())
-                                .then(gpxText => {
-                                    const parser = new DOMParser();
-                                    const xmlDoc = parser.parseFromString(gpxText, "application/xml");
-
-                                    let date = "Unknown";
-                                    let description = "No details available";
-
-                                    const metaTime = xmlDoc.querySelector("metadata > time");
-                                    if (metaTime) {
-                                        date = new Date(metaTime.textContent).toLocaleString();
-                                    } else {
-                                        const firstTrackPointTime = xmlDoc.querySelector("trkpt > time");
-                                        if (firstTrackPointTime) {
-                                            date = new Date(firstTrackPointTime.textContent).toLocaleString();
-                                        }
-                                    }
-
-                                    const trackName = file.path.replace(".gpx", "").split('/').pop();
-                                    const descNode = xmlDoc.querySelector("trk > desc");
-                                    if (descNode) {
-                                        description = descNode.textContent.replace(/<hr.*?>/g, "");
-                                    }
-
-                                    L.popup()
-                                        .setLatLng(event.latlng)
-                                        .setContent(`
-                                            <b>Track:</b> ${trackName}<br>
-                                            <b>Date:</b> ${date}<br><br>
-                                            ${description}
-                                        `)
-                                        .openOn(map);
-                                })
-                                .catch(error => console.error("Error parsing GPX file:", error));
-                        });
-                    }
-                });
-            })
-            .catch(error => console.error("Error fetching GPX files:", error));
-    </script>
-</body>
-</html>
+    }
+</style>
