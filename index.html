@@ -12,17 +12,17 @@
 
         /* Default popup styling */
         .leaflet-popup-content { 
-            font-size: 18px;
-            padding: 15px;
-            max-width: 300px;
+            font-size: 14px; /* Smaller text for desktop */
+            padding: 10px;
+            max-width: 250px;
         }
 
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             .leaflet-popup-content { 
-                font-size: 28px; /* Bigger text */
+                font-size: 32px; /* Bigger text for mobile */
                 padding: 24px;
-                max-width: 400px; /* Larger popup */
+                max-width: 450px; /* Larger popup */
                 max-height: 75%;
                 overflow: auto;
             }
@@ -62,7 +62,7 @@
         var bounds = [];
 
         var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var eventType = 'click'; // Click works for both desktop & mobile
+        var lineWeight = isMobile ? 10 : 4; // Even thicker lines for easier mobile clicks
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -78,14 +78,13 @@
                         var trackColor = trackColors[colorIndex % trackColors.length];
                         colorIndex++;
 
-                        var lineWeight = isMobile ? 8 : 4; // Thicker lines for mobile
-
                         var gpxLayer = new L.GPX(gpxUrl, {
                             async: true,
                             polyline_options: {
                                 color: trackColor,
                                 weight: lineWeight,
-                                opacity: 0.8
+                                opacity: 0.8,
+                                pointerEvents: 'stroke' // Makes it easier to tap on mobile
                             },
                             marker_options: {
                                 startIcon: false,
@@ -101,7 +100,7 @@
                         }).addTo(map);
 
                         // Show popup with track details
-                        gpxLayer.on(eventType, function(event) {
+                        gpxLayer.on('click', function(event) {
                             fetch(gpxUrl)
                                 .then(response => response.text())
                                 .then(gpxText => {
