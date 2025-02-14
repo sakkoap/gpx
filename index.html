@@ -141,6 +141,18 @@
                 });
             })
             .catch(error => console.error("Error fetching GPX files:", error));
+
+        // Force mobile popup styling even after zooming
+        map.on('popupopen', function(e) {
+            let popupContent = e.popup._contentNode;
+            if (window.innerWidth <= 768) { // Mobile condition
+                popupContent.style.fontSize = '72px';
+                popupContent.style.padding = '30px';
+                popupContent.style.maxWidth = '500px';
+                popupContent.style.maxHeight = '80%';
+                popupContent.style.overflow = 'auto';
+            }
+        });
     </script>
 </body>
 </html>
