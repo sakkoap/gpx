@@ -58,7 +58,7 @@
         var bounds = [];
 
         var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var lineWeight = isMobile ? 5 : 4; // Thicker tracks for easier mobile taps
+        var lineWeight = isMobile ? 10 : 4; // Thicker tracks for easier mobile taps
 
         fetch(apiUrl)
             .then(response => response.json())
