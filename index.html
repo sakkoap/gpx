@@ -12,33 +12,29 @@
 
         /* Default popup styling (Desktop) */
         .leaflet-popup-content { 
-            font-size: 12px; /* Smaller text */
-            padding: 8px;
-            max-width: 200px; /* Narrower popup */
+            font-size: 14px;
+            padding: 10px;
+            max-width: 300px;
         }
 
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             .leaflet-popup-content { 
-                font-size: 96px; /* Even bigger text */
-                padding: 40px;
-                max-width: 700px; /* Larger popup */
-                max-height: 90%;
+                font-size: 24px;  /* Bigger text */
+                padding: 20px;  
+                max-width: 90vw; /* Make it wider */
+                max-height: 80vh; /* Taller popup */
                 overflow: auto;
             }
+
             .leaflet-popup-tip { display: none; } /* Hide popup arrow */
 
-            /* Enlarge close button for better tapping */
+            /* Enlarge close button */
             .leaflet-popup-close-button {
-                font-size: 36px;
+                font-size: 30px;
                 width: 50px;
                 height: 50px;
                 line-height: 50px;
-            }
-
-            /* Improve map text readability */
-            .leaflet-container {
-                font-size: 20px;
             }
         }
     </style>
@@ -142,14 +138,14 @@
             })
             .catch(error => console.error("Error fetching GPX files:", error));
 
-        // Force mobile popup styling even after zooming
+        // Ensure popup resizes correctly on mobile
         map.on('popupopen', function(e) {
             let popupContent = e.popup._contentNode;
-            if (window.innerWidth <= 768) { // Mobile condition
-                popupContent.style.fontSize = '96px';
-                popupContent.style.padding = '40px';
-                popupContent.style.maxWidth = '700px';
-                popupContent.style.maxHeight = '90%';
+            if (window.innerWidth <= 768) {
+                popupContent.style.fontSize = '24px';
+                popupContent.style.padding = '20px';
+                popupContent.style.maxWidth = '90vw';
+                popupContent.style.maxHeight = '80vh';
                 popupContent.style.overflow = 'auto';
             }
         });
