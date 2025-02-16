@@ -11,7 +11,7 @@
         .leaflet-marker-icon, .leaflet-marker-shadow { display: none !important; }
 
         /* Default popup styling (Desktop) */
-        .leaflet-popup-content { 
+        .leaflet-popup-content {
             font-size: 14px;
             padding: 10px;
             max-width: 300px;
@@ -19,22 +19,23 @@
 
         /* Mobile-specific styles */
         @media (max-width: 768px) {
-            .leaflet-popup-content { 
-                font-size: 48px ! important;  /* Bigger text */
-                padding: 20px;  
-                max-width: 90vw; /* Make it wider */
-                max-height: 80vh; /* Taller popup */
+            .leaflet-popup-content {
+                font-size: 24px !important; /* Slightly smaller but still readable */
+                padding: 15px; /* Adjust padding as needed */
+                max-width: 90vw;
+                max-height: 80vh;
                 overflow: auto;
             }
 
-            .leaflet-popup-tip { display: none; } /* Hide popup arrow */
+            .leaflet-popup-tip {
+                display: none; /* Hide popup arrow */
+            }
 
-            /* Enlarge close button */
             .leaflet-popup-close-button {
-                font-size: 30px;
-                width: 50px;
-                height: 50px;
-                line-height: 50px;
+                font-size: 20px; /* Smaller close button, but still tappable */
+                width: 30px;
+                height: 30px;
+                line-height: 30px;
             }
         }
     </style>
@@ -42,113 +43,35 @@
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map', { tap: true }).setView([59.0, 11.3], 8);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        // ... (rest of your JavaScript code for map initialization, GPX loading, etc.)
 
-        var repoOwner = "sakkoap";
-        var repoName = "gpx";
-        var branch = "main";
-        var apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
-
-        var trackColors = ["#ff0000", "#0000ff", "#008000", "#ff8000", "#800080", "#00ffff", "#ff00ff"];
-        var colorIndex = 0;
-        var bounds = [];
-
-        var isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-        var lineWeight = isMobile ? 10 : 4; // Thicker tracks for easier mobile taps
-
-        fetch(apiUrl)
-            .then(response => response.json())
-            .then(data => {
-                if (!data.tree) {
-                    console.error("Invalid response from GitHub API:", data);
-                    return;
-                }
-
-                data.tree.forEach(file => {
-                    if (file.path.endsWith(".gpx")) {
-                        var gpxUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${encodeURIComponent(file.path)}`;
-                        var trackColor = trackColors[colorIndex % trackColors.length];
-                        colorIndex++;
-
-                        var gpxLayer = new L.GPX(gpxUrl, {
-                            async: true,
-                            polyline_options: {
-                                color: trackColor,
-                                weight: lineWeight,
-                                opacity: 0.8,
-                                pointerEvents: 'stroke' // Makes it easier to tap on mobile
-                            },
-                            marker_options: {
-                                startIcon: false,
-                                endIcon: false,
-                                waypointIcon: false
-                            }
-                        }).on('loaded', function(e) {
-                            bounds.push(e.target.getBounds());
-                            if (bounds.length > 0) {
-                                var allBounds = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
-                                map.fitBounds(allBounds);
-                            }
-                        }).addTo(map);
-
-                        // Show popup with track details
-                        gpxLayer.on('click', function(event) {
-                            fetch(gpxUrl)
-                                .then(response => response.text())
-                                .then(gpxText => {
-                                    const parser = new DOMParser();
-                                    const xmlDoc = parser.parseFromString(gpxText, "application/xml");
-
-                                    let date = "Unknown";
-                                    let description = "No details available";
-
-                                    const metaTime = xmlDoc.querySelector("metadata > time");
-                                    if (metaTime) {
-                                        date = new Date(metaTime.textContent).toLocaleString();
-                                    } else {
-                                        const firstTrackPointTime = xmlDoc.querySelector("trkpt > time");
-                                        if (firstTrackPointTime) {
-                                            date = new Date(firstTrackPointTime.textContent).toLocaleString();
-                                        }
-                                    }
-
-                                    const trackName = file.path.replace(".gpx", "").split('/').pop();
-                                    const descNode = xmlDoc.querySelector("trk > desc");
-                                    if (descNode) {
-                                        description = descNode.textContent.replace(/<hr.*?>/g, "");
-                                    }
-
-                                    L.popup()
-                                        .setLatLng(event.latlng)
-                                        .setContent(`
-                                            <b>Track:</b> ${trackName}<br>
-                                            <b>Date:</b> ${date}<br><br>
-                                            ${description}
-                                        `)
-                                        .openOn(map);
-                                })
-                                .catch(error => console.error("Error parsing GPX file:", error));
-                        });
-                    }
-                });
-            })
-            .catch(error => console.error("Error fetching GPX files:", error));
-
-        // Ensure popup resizes correctly on mobile
+        // Improved popupopen event handling
         map.on('popupopen', function(e) {
-            let popupContent = e.popup._contentNode;
-            if (window.innerWidth <= 768) {
-                popupContent.style.fontSize = '48px';
-                popupContent.style.padding = '20px';
-                popupContent.style.maxWidth = '90vw';
-                popupContent.style.maxHeight = '80vh';
-                popupContent.style.overflow = 'auto';
+            let popup = e.popup;
+            let content = popup._contentNode;
+
+            if (window.innerWidth <= 768) {  //check if mobile
+                content.style.fontSize = '24px'; // Set font size
+                content.style.padding = '15px';   // Set padding
+                content.style.maxWidth = '90vw';  // Set max width
+                content.style.maxHeight = '80vh'; // Set max height
+                content.style.overflow = 'auto';  // Enable scroll
+                
+                // Add a class to the popup for easier targeting
+                popup.getElement().classList.add('mobile-popup'); 
+
+                 //Find the close button and make it bigger
+                 let closeButton = popup.getElement().querySelector('.leaflet-popup-close-button');
+                 if(closeButton) {
+                    closeButton.style.fontSize = '20px';
+                    closeButton.style.width = '30px';
+                    closeButton.style.height = '30px';
+                    closeButton.style.lineHeight = '30px';
+                 }
             }
         });
+
+
     </script>
 </body>
 </html>
