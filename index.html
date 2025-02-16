@@ -17,25 +17,25 @@
             max-width: 300px;
         }
 
-        /* Mobile-specific styles */
+        /* Mobile-specific styles (Initial settings) */
         @media (max-width: 768px) {
             .leaflet-popup-content {
-                font-size: 24px !important; /* Slightly smaller but still readable */
-                padding: 15px; /* Adjust padding as needed */
-                max-width: 90vw;
-                max-height: 80vh;
+                font-size: 16px; /* Start with a smaller font size */
+                padding: 10px;
+                max-width: 90vw; /* Occupy most of the screen width */
+                max-height: 50vh; /* Start with a moderate height */
                 overflow: auto;
             }
 
             .leaflet-popup-tip {
-                display: none; /* Hide popup arrow */
+                display: none;
             }
 
             .leaflet-popup-close-button {
-                font-size: 20px; /* Smaller close button, but still tappable */
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
+                font-size: 16px;
+                width: 24px;
+                height: 24px;
+                line-height: 24px;
             }
         }
     </style>
@@ -143,24 +143,42 @@
             let popup = e.popup;
             let content = popup._contentNode;
 
-            if (window.innerWidth <= 768) {  //check if mobile
-                content.style.fontSize = '24px'; // Set font size
-                content.style.padding = '15px';   // Set padding
-                content.style.maxWidth = '90vw';  // Set max width
-                content.style.maxHeight = '80vh'; // Set max height
-                content.style.overflow = 'auto';  // Enable scroll
+            if (window.innerWidth <= 768) {
+                // Remove any previously set styles (important for dynamic resizing)
+                content.style.fontSize = '';
+                content.style.padding = '';
+                content.style.maxWidth = '';
+                content.style.maxHeight = '';
+                content.style.overflow = '';
 
-                // Add a class to the popup for easier targeting
-                popup.getElement().classList.add('mobile-popup');
+                // Dynamically calculate popup height based on content
+                let contentHeight = content.offsetHeight;
+                let availableHeight = window.innerHeight * 0.7; // 70% of screen height
 
-                //Find the close button and make it bigger
+                let popupHeight = Math.min(contentHeight, availableHeight); // Don't exceed available height
+
+                content.style.maxHeight = popupHeight + 'px'; // Set the max height
+
+                content.style.fontSize = '16px'; // Set font size
+                content.style.padding = '10px';  // Set padding
+                content.style.maxWidth = '90vw'; // Set max width
+                content.style.overflow = 'auto'; // Enable scroll
+
                 let closeButton = popup.getElement().querySelector('.leaflet-popup-close-button');
                 if (closeButton) {
-                    closeButton.style.fontSize = '20px';
-                    closeButton.style.width = '30px';
-                    closeButton.style.height = '30px';
-                    closeButton.style.lineHeight = '30px';
+                    closeButton.style.fontSize = '16px';
+                    closeButton.style.width = '24px';
+                    closeButton.style.height = '24px';
+                    closeButton.style.lineHeight = '24px';
                 }
+            }
+        });
+
+        // Add a resize listener to adjust popup on orientation changes
+        window.addEventListener('resize', function() {
+            // Close the popup to trigger the 'popupopen' event and recalculate
+            if (map.hasOpenPopup()) {
+                map.closePopup();
             }
         });
 
